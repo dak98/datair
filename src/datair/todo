@@ -1,0 +1,15 @@
+- Usunąć powietrze-gov. Klasy abstrakcyjne w source zamienić na interejsy lub zwykłe klasy.
+- Przesunąć abstrakcyjne klasy przechowujące z source do innego pakietu.
+- Dodać parsowanie plików jsona przez gson - przechowywanie ich na dysku w takiej postaci lub przez zmienione klasy abstrakcyjne?
+  Parser JSON -> klasy przechowujące i na odwrót?
+- Pełna serializacja danych.
+- Wielowątkowe wczytywanie plików - z internetu i z dysku. Rozpoczęcie na wielu wątkach i join(). Ile wątków mogę używać?
+  Jak wykorzystać wszystkie możliwe wątki dla danego sprzętu?
+- Łączenie serializowanych danych. Wczytywanie jedynie tego co potrzebne.
+- Testy do klas visitora. Visitor przez wewnętrzną implementację w javie?
+- Poprawienie opcji linii. Np. Wypisz wszystkie stacje itp.
+- Zmniejszyć i wyszczególnić ilość javadoca.
+- Mocki z mockito??
+- Wrzucenie na gita.
+- Muzyka przy wczytywaniu danych??
+- Poprawić ChangeGraph.
