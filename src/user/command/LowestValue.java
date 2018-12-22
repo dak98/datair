@@ -1,11 +1,11 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetAllValuesOfParamAtDate;
-import data.collector.visitors.GetAllValuesOfParamBetweenDates;
-import data.source.SensorData;
+import data.AirDataCollector;
+import data.visitors.GetAllValuesOfParamAtDate;
+import data.SensorData;
 import data.source.powietrze.gov.PowietrzeGov;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -28,17 +28,17 @@ public class LowestValue extends Command {
      * @return -7 - No measurements recorded at specified date.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         String[] paramCodes = { "ST", "SO2", "NO2", "CO", "PM10", "PM25", "O3", "C6H6" };
         Map<String, Float> lowestPerParam = new HashMap<>();
         AirDataCollector airDataCollector = new AirDataCollector();
         for (String paramCode : paramCodes) {
             String[] tmpArgs = { paramCode, args[0] };
-            List<SensorData.Values> valuesOfSensor = (List<SensorData.Values>) airDataCollector.accept(new GetAllValuesOfParamAtDate(), tmpArgs, new PowietrzeGov());
-            if (valuesOfSensor.isEmpty()) {
+            List<SensorData.Measurement> measurements = (List<SensorData.Measurement>) airDataCollector.accept(new GetAllValuesOfParamAtDate(), tmpArgs, new PowietrzeGov());
+            if (measurements.isEmpty()) {
                 lowestPerParam.put(paramCode, Float.MAX_VALUE);
             } else {
-                lowestPerParam.put(paramCode, getLowest(valuesOfSensor));
+                lowestPerParam.put(paramCode, getLowest(measurements));
             }
         }
         Float lowest = Float.MAX_VALUE;
@@ -57,22 +57,17 @@ public class LowestValue extends Command {
         return 0;
     }
     /**
-     * @param valuesOfParam
-     *         List of {@link data.source.SensorData.Values} for particular parameter.
+     * @param measurements
+     *        List of {@link SensorData.Measurement} for particular parameter.
      * @return Lowest measurement value.
      */
-    private Float getLowest(List<SensorData.Values> valuesOfParam) {
-        Float lowest = Float.MAX_VALUE;
-        Iterator<SensorData.Values> valuesIterator = valuesOfParam.listIterator();
-        SensorData.Values value = null;
-        while (valuesIterator.hasNext()) {
-            value = valuesIterator.next();
-            if (Float.parseFloat(value.getValue()) < lowest) {
-                lowest = Float.parseFloat(value.getValue());
+    private Float getLowest(List<SensorData.Measurement> measurements) {
+        float lowest = Float.MAX_VALUE;
+        SensorData.Measurement value = null;
+        for (SensorData.Measurement measurement : measurements) {
+            if (measurement.getValue() < lowest) {
+                lowest = measurement.getValue();
             }
-        }
-        if (Float.parseFloat(value.getValue()) < lowest) {
-            lowest = Float.parseFloat(value.getValue());
         }
         return lowest;
     }

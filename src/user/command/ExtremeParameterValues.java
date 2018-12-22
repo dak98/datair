@@ -1,11 +1,12 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetSensorDataByParamCode;
-import data.source.SensorData;
-import data.source.Station;
+import data.AirDataCollector;
+import data.visitors.GetSensorDataByParamCode;
+import data.SensorData;
+import data.Station;
 import data.source.powietrze.gov.PowietrzeGov;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -29,15 +30,15 @@ public class ExtremeParameterValues extends Command {
      *         -9 - Parameter is not checked by any station.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         if (!isCorrectParamCode(args[0])) {
             return -4;
         }
-        TreeMap<SensorData.Values, Station> maxValuePerStation = new TreeMap<>();
-        TreeMap<SensorData.Values, Station> minValuePerStation = new TreeMap<>();
+        TreeMap<SensorData.Measurement, Station> maxValuePerStation = new TreeMap<>();
+        TreeMap<SensorData.Measurement, Station> minValuePerStation = new TreeMap<>();
         AirDataCollector airDataCollector = new AirDataCollector();
-        List<Station> stationsList = airDataCollector.getStationsList(new PowietrzeGov());
-        for (Station station : stationsList) {
+        Station[] stations = airDataCollector.getStations(new PowietrzeGov());
+        for (Station station : stations) {
             String[] tmpArgs = { station.getStationName(), args[0] };
             SensorData sensorData = (SensorData) airDataCollector.accept(new GetSensorDataByParamCode(), tmpArgs, new PowietrzeGov());
             if (sensorData != null && getMaxValue(sensorData) != null) {
@@ -51,7 +52,7 @@ public class ExtremeParameterValues extends Command {
             return -9;
         }
         /* Wzorzec iterator - iterowanie po Set */
-        NavigableMap<SensorData.Values, Station> reversedMaxValuePerStation = maxValuePerStation.descendingMap();
+        NavigableMap<SensorData.Measurement, Station> reversedMaxValuePerStation = maxValuePerStation.descendingMap();
         System.out.println("Max: " + reversedMaxValuePerStation.firstEntry().getValue().getStationName() + " - " +
                            reversedMaxValuePerStation.firstEntry().getKey().getValue() + " " +
                            reversedMaxValuePerStation.firstEntry().getKey().getDate());
@@ -79,17 +80,14 @@ public class ExtremeParameterValues extends Command {
      * @return Value of measurement for sensor with maximum value.
      *         null if no measurements were made.
      */
-    private SensorData.Values getMaxValue(SensorData sensorData) {
-        List<SensorData.Values> valuesList = sensorData.getListOfValues();
-        if (!valuesList.isEmpty()) {
-            SensorData.Values maxValue = valuesList.get(0);
-            for (SensorData.Values value : valuesList) {
-                if (maxValue.compareTo(value) < 0) {
-                    maxValue = value;
+    private SensorData.Measurement getMaxValue(SensorData sensorData) {
+        SensorData.Measurement[] measurements = sensorData.getMeasurements();
+        if (measurements.length > 0) {
+            SensorData.Measurement maxValue = measurements[0];
+            for (SensorData.Measurement measurement : measurements) {
+                if (measurement != null && maxValue.compareTo(measurement) < 0) {
+                    maxValue = measurement;
                 }
-            }
-            if (maxValue.getValue().equals("null")) {
-                return null;
             }
             return maxValue;
         }
@@ -100,19 +98,16 @@ public class ExtremeParameterValues extends Command {
      * @return Value of measurement for sensor with minimum value.
      *         null if no measurements were made.
      */
-    private SensorData.Values getMinValue(SensorData sensorData) {
-        List<SensorData.Values> valuesList = sensorData.getListOfValues();
-        if (!valuesList.isEmpty()) {
-            SensorData.Values maxValue = valuesList.get(0);
-            for (SensorData.Values value : valuesList) {
-                if (maxValue.compareTo(value) > 0) {
-                    maxValue = value;
+    private SensorData.Measurement getMinValue(SensorData sensorData) {
+        SensorData.Measurement[] measurements = sensorData.getMeasurements();
+        if (measurements.length > 0) {
+            SensorData.Measurement minValue = measurements[0];
+            for (SensorData.Measurement measurement : measurements) {
+                if (measurement != null && minValue.compareTo(measurement) > 0) {
+                    minValue = measurement;
                 }
             }
-            if (maxValue.getValue().equals("null")) {
-                return null;
-            }
-            return maxValue;
+            return minValue;
         }
         return null;
     }

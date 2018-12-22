@@ -2,6 +2,8 @@ package user.command;
 
 import user.menu.Menu;
 
+import java.io.IOException;
+
 /**
  * Contains methods responsible for running
  * command given the the program by the user.
@@ -12,7 +14,7 @@ public class RunCommand {
      * @param command
      *         String with command. It must start with the command.
      */
-    public void run(String command) {
+    public void run(String command) throws IOException {
         if (command != null) {
             if (command.equals("exit")) {
                 System.exit(0);

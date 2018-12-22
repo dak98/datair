@@ -1,11 +1,12 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetStation;
-import data.source.AirIndex;
-import data.source.Station;
+import data.AirDataCollector;
+import data.visitors.GetStationByName;
+import data.AirIndex;
+import data.Station;
 import data.source.powietrze.gov.PowietrzeGov;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -28,9 +29,9 @@ public class CurrentAirIndex extends Command {
      * @return -1 - Unknown station name.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         AirDataCollector airDataCollector = new AirDataCollector();
-        Station station = (Station) airDataCollector.accept(new GetStation(), args, new PowietrzeGov());
+        Station station = (Station) airDataCollector.accept(new GetStationByName(), args, new PowietrzeGov());
         if (station != null) {
             System.out.println(station.getStationID());
             List<AirIndex> airIndexesOfStation = airDataCollector.getAirIndexOfStation(station.getStationID(), new PowietrzeGov());

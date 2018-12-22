@@ -1,10 +1,11 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetAllValuesOfParamAfterDate;
-import data.source.SensorData;
+import data.AirDataCollector;
+import data.visitors.GetAllValuesOfParamAfterDate;
+import data.SensorData;
 import data.source.powietrze.gov.PowietrzeGov;
 
+import java.io.IOException;
 import java.util.*;
 
 import static java.lang.Math.abs;
@@ -29,15 +30,15 @@ public class LargestFluctuation extends Command {
      * @return -6 - No measurements recorded after specified date.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         String[] paramCodes = { "ST", "SO2", "NO2", "CO", "PM10", "PM25", "O3", "C6H6" };
         Map<String, Float> fluctuationPerParam = new HashMap<>();
         AirDataCollector airDataCollector = new AirDataCollector();
         for (String paramCode : paramCodes) {
             String[] tmpArgs = { paramCode, args[0] };
-            List<SensorData.Values> valuesOfSensor = (List<SensorData.Values>) airDataCollector.accept(new GetAllValuesOfParamAfterDate(), tmpArgs, new PowietrzeGov());
-            if (valuesOfSensor.size() >= 2) {
-                fluctuationPerParam.put(paramCode, getFluctuation(valuesOfSensor));
+            List<SensorData.Measurement> measurements = (List<SensorData.Measurement>) airDataCollector.accept(new GetAllValuesOfParamAfterDate(), tmpArgs, new PowietrzeGov());
+            if (measurements.size() >= 2) {
+                fluctuationPerParam.put(paramCode, getFluctuation(measurements));
             } else {
                 fluctuationPerParam.put(paramCode, 0.0f);
             }
@@ -58,20 +59,19 @@ public class LargestFluctuation extends Command {
         return 0;
     }
     /**
-     * @param valuesOfParam
-     *         List of {@link data.source.SensorData.Values} for particular parameter.
+     * @param measurements
+     *         List of {@link SensorData.Measurement} for particular parameter.
      *         It must containt at least 2 elements.
      * @return Fluctuation of measurements values.
      */
-    private Float getFluctuation(List<SensorData.Values> valuesOfParam) {
-        Float fluctuation = 0.0f;
-        Iterator<SensorData.Values> valuesIterator = valuesOfParam.listIterator();
-        SensorData.Values value1 = valuesIterator.next(), value2 = valuesIterator.next();
-        while (valuesIterator.hasNext()) {
-            fluctuation += abs(Float.parseFloat(value2.getValue()) - Float.parseFloat(value1.getValue()));
+    private Float getFluctuation(List<SensorData.Measurement> measurements) {
+        float fluctuation = 0.0f;
+        SensorData.Measurement value1 = measurements.get(0), value2 = measurements.get(1);
+        for (int i = 2; i < measurements.size(); i++) {
+            fluctuation += abs(value1.getValue() - value2.getValue());
             value1 = value2;
-            value2 = valuesIterator.next();
+            value2 = measurements.get(i);
         }
-        return (fluctuation += abs(Float.parseFloat(value2.getValue()) - Float.parseFloat(value1.getValue())));
+        return fluctuation;
     }
 }

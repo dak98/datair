@@ -1,12 +1,12 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetListOfStationsParamCodes;
-import data.collector.visitors.GetPerDateSensorData;
-import data.collector.visitors.GetStation;
+import data.AirDataCollector;
+import data.visitors.GetListOfStationsParamCodes;
+import data.visitors.GetPerDateSensorData;
+import data.visitors.GetStationByName;
 import data.source.powietrze.gov.PowietrzeGov;
 
-import java.util.Iterator;
+import java.io.IOException;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -40,7 +40,7 @@ public class ParameterValue extends Command {
      *         -3 - No measurement was made on specified date.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         AirDataCollector airDataCollector = new AirDataCollector();
         if (!isStation(args)) {
             return -1;
@@ -60,9 +60,9 @@ public class ParameterValue extends Command {
      * @return True if station with given name exists.
      *         False otherwise.
      */
-    private boolean isStation(String[] stationName) {
+    private boolean isStation(String[] stationName) throws IOException{
         AirDataCollector airDataCollector = new AirDataCollector();
-        if (airDataCollector.accept(new GetStation(), stationName, new PowietrzeGov()) == null) {
+        if (airDataCollector.accept(new GetStationByName(), stationName, new PowietrzeGov()) == null) {
             return false;
         }
         return true;
@@ -72,7 +72,7 @@ public class ParameterValue extends Command {
      * @return True if given parameter is checked by station.
      *         False otherwise.
      */
-    private boolean isParamOfStation(String[] args) {
+    private boolean isParamOfStation(String[] args) throws IOException {
         AirDataCollector airDataCollector = new AirDataCollector();
         List<String> paramCodes = (List<String>) airDataCollector.accept(new GetListOfStationsParamCodes(), args, new PowietrzeGov());
         for (String paramCode : paramCodes) {

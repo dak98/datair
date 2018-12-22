@@ -1,11 +1,14 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetSensorDataByParamCode;
-import data.source.SensorData;
-import data.source.Station;
+import data.AirDataCollector;
+import data.visitors.GetSensorDataByParamCode;
+import data.SensorData;
+import data.Station;
 import data.source.powietrze.gov.PowietrzeGov;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -29,29 +32,37 @@ public class HighestValuesSites extends Command {
      *         -8 - Parameter is not checked by specified number of stations.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         if (!isCorrectParamCode(args[0])) {
             return -4;
         }
-        TreeMap<SensorData.Values, Station> maxValuePerStation = new TreeMap<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = null;
+        try {
+            date = sdf.parse(args[2]);
+        } catch (ParseException e) {
+            // Could not parse given date.
+            // TODO: Date could not be parsed.
+        }
+        TreeMap<SensorData.Measurement, Station> maxValuePerStation = new TreeMap<>();
         AirDataCollector airDataCollector = new AirDataCollector();
-        List<Station> stationsList = airDataCollector.getStationsList(new PowietrzeGov());
-        for (Station station : stationsList) {
+        Station[] stations = airDataCollector.getStations(new PowietrzeGov());
+        for (Station station : stations) {
             String[] tmpArgs = { station.getStationName(), args[0] };
             SensorData sensorData = (SensorData) airDataCollector.accept(new GetSensorDataByParamCode(), tmpArgs, new PowietrzeGov());
-            if (sensorData != null && getMaxValue(sensorData, args[2]) != null) {
-                maxValuePerStation.put(getMaxValue(sensorData, args[2]), station);
+            if (sensorData != null && getMaxValue(sensorData, date) != null) {
+                maxValuePerStation.put(getMaxValue(sensorData, date), station);
             }
         }
         if (maxValuePerStation.size() < Integer.parseInt(args[1])) {
             return -8;
         }
         /* Wzorzec iterator - iterowanie po Set */
-        NavigableMap<SensorData.Values, Station> reversedMaxValuePerStation = maxValuePerStation.descendingMap();
-        Iterator<Map.Entry<SensorData.Values, Station>> valuesAndStationsSetIterator = reversedMaxValuePerStation.entrySet().iterator();
+        NavigableMap<SensorData.Measurement, Station> reversedMaxValuePerStation = maxValuePerStation.descendingMap();
+        Iterator<Map.Entry<SensorData.Measurement, Station>> valuesAndStationsSetIterator = reversedMaxValuePerStation.entrySet().iterator();
         for (int i = Integer.parseInt(args[1]); i > 0; i--) {
-            Map.Entry<SensorData.Values, Station> valueAndStation = valuesAndStationsSetIterator.next();
-            System.out.println(valueAndStation.getValue().getStationName() + ": " + valueAndStation.getKey().getValue());
+            Map.Entry<SensorData.Measurement, Station> measurementStationEntry = valuesAndStationsSetIterator.next();
+            System.out.println(measurementStationEntry.getValue().getStationName() + ": " + measurementStationEntry.getKey().getValue());
         }
         return 0;
     }
@@ -75,11 +86,11 @@ public class HighestValuesSites extends Command {
      * @return Value of measurement for sensor on specified date.
      *         null if no measurement was made on specified date.
      */
-    private SensorData.Values getMaxValue(SensorData sensorData, String date) {
-        List<SensorData.Values> valuesList = sensorData.getListOfValues();
-        for (SensorData.Values value : valuesList) {
-            if (value.getDate().equals(date)) {
-                return value;
+    private SensorData.Measurement getMaxValue(SensorData sensorData, Date date) {
+        SensorData.Measurement[] measurements = sensorData.getMeasurements();
+        for (SensorData.Measurement measurement : measurements) {
+            if (measurement.getDate().equals(date)) {
+                return measurement;
             }
         }
         return null;

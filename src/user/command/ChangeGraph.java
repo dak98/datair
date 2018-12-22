@@ -1,13 +1,15 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetSensorDataByParamCode;
-import data.collector.visitors.GetStationsByParamCode;
-import data.source.SensorData;
-import data.source.Station;
+import data.AirDataCollector;
+import data.visitors.GetSensorDataByParamCode;
+import data.visitors.GetStationsByParamCode;
+import data.SensorData;
+import data.Station;
 import data.source.powietrze.gov.PowietrzeGov;
-import utility.DatesComparator;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -31,42 +33,51 @@ public class ChangeGraph extends Command {
      *         -5 - No measurements between specified dates.
      */
     @Override
-    public int outputData(String[] args) {
-        if (!isCorrectParamCode(args[0])) {
+    public int outputData(String[] args) throws IOException {
+       if (!isCorrectParamCode(args[0])) {
             return -4;
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date startDate = null;
+        Date endDate = null;
+        try {
+            startDate = sdf.parse(args[1]);
+            endDate = sdf.parse(args[2]);
+        } catch (ParseException e) {
+            // Could not parse given date.
+            // TODO: Date could not be parsed.
         }
         AirDataCollector airDataCollector = new AirDataCollector();
         String[] tmpArgs1 = { args[0] };
-        List<Station> stationsList = (List<Station>) airDataCollector.accept(new GetStationsByParamCode(), tmpArgs1, new PowietrzeGov());
-        List<List<SensorData.Values>> valuesOfStation = new LinkedList<>();
+        Station[] stations = (Station[]) airDataCollector.accept(new GetStationsByParamCode(), tmpArgs1, new PowietrzeGov());
+        List<SensorData.Measurement[]> measurementsOfStation = new LinkedList<>();
         int longestName = 0;
-        for (Station station : stationsList) {
+        for (Station station : stations) {
             if (longestName < station.getStationName().length()) {
                 longestName = station.getStationName().length();
             }
             String[] tmpArgs2 = { station.getStationName(), args[0] };
             SensorData sensorData = (SensorData) airDataCollector.accept(new GetSensorDataByParamCode(), tmpArgs2, new PowietrzeGov());
             if (sensorData != null) {
-                valuesOfStation.add(sensorData.getListOfValues());
+                measurementsOfStation.add(sensorData.getMeasurements());
             }
         }
-        List<ListIterator<SensorData.Values>> valuesIterators = new LinkedList<>();
-        DatesComparator datesComparator = new DatesComparator();
-        for (List<SensorData.Values> valuesList : valuesOfStation) {
-            valuesIterators.add(valuesList.listIterator(valuesList.size()));
+        List<ListIterator<SensorData.Measurement>> measurementsIterators = new LinkedList<>();
+        for (SensorData.Measurement[] measurements : measurementsOfStation) {
+            measurementsIterators.add(Arrays.asList(measurements).listIterator(measurements.length));
         }
         boolean stop = false;
         boolean iter = false;
         while (!stop) {
             int i = 0;
-            for (ListIterator<SensorData.Values> valuesIterator : valuesIterators) {
-                if (valuesIterator.hasPrevious()) {
-                    SensorData.Values value = valuesIterator.previous();
-                    if (datesComparator.isBetweenDates(value.getDate(), args[1], args[2])) {
-                        graph(stationsList.get(i).getStationName(), longestName, value.getDate(), value.getValue(), 50.0f);
+            for (ListIterator<SensorData.Measurement> measurementIterator : measurementsIterators) {
+                if (measurementIterator.hasPrevious()) {
+                    SensorData.Measurement measurement = measurementIterator.previous();
+                    if (!measurement.getDate().before(startDate) && !measurement.getDate().after(endDate)) {
+                        graph(stations[i].getStationName(), longestName, sdf.format(measurement.getDate()), measurement.getValue(), 50.0f);
                         i++;
                         iter = true;
-                    } else if (datesComparator.isLaterDate(value.getDate(), args[2])) {
+                    } else if (measurement.getDate().after(endDate)) {
                         stop = true;
                     }
                 }
@@ -76,6 +87,7 @@ public class ChangeGraph extends Command {
             return -5;
         }
         return 0;
+
     }
     /**
      * @param paramCode
@@ -103,17 +115,12 @@ public class ChangeGraph extends Command {
      *         Scales the number of output squares.
      *
      */
-    private void graph(String stationName, int longestName, String date, String value, float scalar) {
+    private void graph(String stationName, int longestName, String date, float value, float scalar) {
+        int nSquares = nSquares = Math.round(value / scalar * 10);
         StringTokenizer dateParts = new StringTokenizer(date, " ");
-        String day = dateParts.nextToken();
+        String data = dateParts.nextToken();
         String time = dateParts.nextToken();
-        int nSquares = 0;
-        if (value.equals("null")) {
-            value = "0.0";
-        } else {
-            nSquares = Math.round(Float.parseFloat(value) / scalar * 10);
-        }
-        System.out.print(time + " " + day + " (" + stationName + ")");
+        System.out.print(time + " " + data +  " (" + stationName + ")");
         for (int i = 0; longestName > stationName.length() + i; i++) {
             System.out.print(" ");
         }

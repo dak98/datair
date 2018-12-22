@@ -1,4 +1,3 @@
-- Usunąć powietrze-gov. Klasy abstrakcyjne w source zamienić na interejsy lub zwykłe klasy.
 - Przesunąć abstrakcyjne klasy przechowujące z source do innego pakietu.
 - Dodać parsowanie plików jsona przez gson - przechowywanie ich na dysku w takiej postaci lub przez zmienione klasy abstrakcyjne?
   Parser JSON -> klasy przechowujące i na odwrót?
@@ -12,4 +11,3 @@
 - Mocki z mockito??
 - Wrzucenie na gita.
 - Muzyka przy wczytywaniu danych??
-- Poprawić ChangeGraph.

@@ -1,12 +1,9 @@
 package datair;
 
-import data.collector.AirDataCollector;
 import user.command.RunCommand;
 import user.menu.Menu;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class DatairMain {
     public static void main(String[] args) {
@@ -14,26 +11,26 @@ public class DatairMain {
         /* Visitor - wzorzec projektowy */
         /* Iterator - wzorzec projektowy - HighestValuesSites */
         Menu menu = new Menu();
-        RunCommand runCommand = new RunCommand();
-        AirDataCollector airDataCollector = new AirDataCollector();
-        airDataCollector.load();
         menu.greetins();
         if (args.length == 0) {
             menu.help();
         } else {
-            StringBuilder command = new StringBuilder();
-            for (String arg : args) {
-                command.append(arg + " ");
-            }
-            runCommand.run(command.toString().trim());
-        }
-        while (true) {
+            RunCommand runCommand = new RunCommand();
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                runCommand.run(reader.readLine());
+                runCommand.run(argsToCommand(args));
             } catch (IOException e) {
-                System.out.println("Could not read the input.");
+                System.out.println(e.getMessage());
+                System.exit(1);
             }
         }
+    }
+
+    private static String argsToCommand(String[] args) {
+        StringBuilder command = new StringBuilder();
+        for (String arg : args) {
+            command.append(arg)
+                   .append(" ");
+        }
+        return command.toString().trim();
     }
 }

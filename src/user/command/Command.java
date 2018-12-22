@@ -1,5 +1,7 @@
 package user.command;
 
+import java.io.IOException;
+
 /**
  * Abstract class for commands available for the user of the program.
  */
@@ -21,5 +23,5 @@ public abstract class Command {
      * @return Negative integer - error code.
      *         0 - correct execution.
      */
-    public abstract int outputData(String[] args);
+    public abstract int outputData(String[] args) throws IOException;
 }

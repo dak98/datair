@@ -1,13 +1,12 @@
 package user.command;
 
-import data.collector.AirDataCollector;
-import data.collector.visitors.GetAllValuesOfParamBetweenDates;
-import data.source.SensorData;
+import data.AirDataCollector;
+import data.visitors.GetAllValuesOfParamBetweenDates;
+import data.SensorData;
 import data.source.powietrze.gov.PowietrzeGov;
 
-import java.util.Iterator;
+import java.io.IOException;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
 /**
@@ -31,25 +30,20 @@ public class ParameterAverage extends Command {
      *         -5 - No measurements between specified dates.
      */
     @Override
-    public int outputData(String[] args) {
+    public int outputData(String[] args) throws IOException {
         if (!isCorrectParamCode(args[0])) {
             return -4;
         }
         AirDataCollector airDataCollector = new AirDataCollector();
-        List<SensorData.Values> valuesList = (List<SensorData.Values>) airDataCollector.accept (new GetAllValuesOfParamBetweenDates(), args, new PowietrzeGov());
-        if (valuesList.isEmpty()) {
+        List<SensorData.Measurement> measurements = (List<SensorData.Measurement>) airDataCollector.accept (new GetAllValuesOfParamBetweenDates(), args, new PowietrzeGov());
+        if (measurements.isEmpty()) {
             return -5;
         }
-        Iterator<SensorData.Values> valuesListIterator = valuesList.listIterator();
         float avg = 0.0f;
         int count = 0;
-        try {
-            while (valuesListIterator.hasNext()) {
-                avg += Float.parseFloat(valuesListIterator.next().getValue());
-                count++;
-            }
-        } catch (NoSuchElementException e) {
-
+        for (SensorData.Measurement measurement : measurements) {
+            avg += measurement.getValue();
+            count++;
         }
         System.out.println(avg / count);
         return 0;
